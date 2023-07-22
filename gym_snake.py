@@ -68,17 +68,17 @@ class snake():
         observation = self.get_observation()
         return observation
 
-    def step(self):
-        if self.action == 0:
+    def step(self,action):
+        if action == 0:
             self.snake_y_change = -self.snake_block
             self.snake_x_change = 0
-        elif self.action == 1:
+        elif action == 1:
             self.snake_y_change = self.snake_block
             self.snake_x_change = 0
-        elif self.action == 2:
+        elif action == 2:
             self.snake_x_change = -self.snake_block
             self.snake_y_change = 0
-        elif self.action == 3:
+        elif action == 3:
             self.snake_x_change = self.snake_block
             self.snake_y_change = 0
 
@@ -139,16 +139,12 @@ class snake():
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN :
                     if event.key == pygame.K_UP:
-                        self.action = 0  # 上
                         return 0 
                     elif event.key == pygame.K_DOWN:
-                        self.action = 1  # 下
                         return 1
                     elif event.key == pygame.K_LEFT:
-                        self.action = 2  # 左
                         return 2
                     elif event.key == pygame.K_RIGHT:
-                        self.action = 3  # 右
                         return 3
 
     def close(self):
@@ -159,7 +155,7 @@ class snake():
         action = env.render(mode='h')  # 人类模式下，玩家通过键盘操作
         if action != None :
             print(action)
-        return self.step()
+        return self.step(action)
 
 if __name__ == "__main__":
 

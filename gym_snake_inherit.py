@@ -19,8 +19,8 @@ class SnakeEnv(gym.Env):
     def reset(self):
         return self.snake_game.reset()
 
-    def step(self):
-        return self.snake_game.step()
+    def step(self,action):
+        return self.snake_game.step(action)
 
     def render(self,mode=None):
         # 在屏幕上显示游戏状态，这里需要调用原始snake类的渲染方法
@@ -30,16 +30,16 @@ class SnakeEnv(gym.Env):
         self.snake_game.close()
 
     def run(self):
-        self.action = self.snake_game.render(mode='h')
-        if self.action != None :
-            print(self.action)
-        return self.step()
+        action = self.snake_game.render(mode='h')
+        if action != None :
+            print(action)
+        return self.step(action)
     
     def sample(self):
-        self.action = self.action_space.sample()  # sample.
-        if self.action != None :
-            print(self.action)
-        return self.step()
+        action = self.action_space.sample()  # sample.
+        if action != None :
+            print(action)
+        return self.step(action)
 
 if __name__ == '__main__':
 
@@ -48,5 +48,5 @@ if __name__ == '__main__':
     done = False
 
     while not done:
-        observation, reward, done, _ = env.run()
+        observation, reward, done, _ = env.sample()
 
