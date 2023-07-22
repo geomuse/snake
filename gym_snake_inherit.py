@@ -1,6 +1,6 @@
 import gym 
 from gym import spaces
-from gym_snake import snake  # 假设你的原始代码保存在snake.py中
+from gym_snake import snake  
 import numpy as np
 
 class SnakeEnv(gym.Env):
@@ -20,7 +20,6 @@ class SnakeEnv(gym.Env):
         return self.snake_game.reset()
 
     def step(self):
-        print(self.action)
         return self.snake_game.step()
 
     def render(self,mode=None):
@@ -31,9 +30,17 @@ class SnakeEnv(gym.Env):
         self.snake_game.close()
 
     def run(self):
-        self.render(mode='h')
+        self.action = self.snake_game.render(mode='h')
+        if self.action != None :
+            print(self.action)
         return self.step()
     
+    def sample(self):
+        self.action = self.action_space.sample()  # sample.
+        if self.action != None :
+            print(self.action)
+        return self.step()
+
 if __name__ == '__main__':
 
     env = SnakeEnv()
@@ -41,8 +48,5 @@ if __name__ == '__main__':
     done = False
 
     while not done:
-        env.action = env.action_space.sample()  # sample.
-        observation, reward, done, _ = env.step()
-        # print(reward)
-        # env.render()
+        observation, reward, done, _ = env.run()
 

@@ -1,36 +1,41 @@
+import gym
+from gym import spaces
 import pygame
 import time
 import random
 import numpy as np
-from dataclasses import dataclass
 
-@dataclass
-class snake():
-    pygame.font.init()
-    # 游戏窗口大小和速度设置
-    window_width = 800
-    window_height = 600
-    snake_block = 10
-    snake_speed = 15
-    
-    # 定义颜色
-    black = (0, 0, 0)
-    white = (255, 255, 255)
-    purple = (155, 89, 182)
-    green = (46, 204, 113)
-    blue = (52, 152, 219)
+class SnakeEnv(gym.Env):
+    def __init__(self):
+        super(SnakeEnv, self).__init__()
+        pygame.font.init()
+        # 游戏窗口大小和速度设置
+        self.window_width = 800
+        self.window_height = 600
+        self.snake_block = 10
+        self.snake_speed = 15
 
-    game_window = None
-    snake_list = []
-    snake_length = 1
-    snake_x = window_width / 2
-    snake_y = window_height / 2
-    snake_x_change = 0
-    snake_y_change = 0
-    food_x = round(random.randrange(0, window_width - snake_block) / 20.0) * 20.0
-    food_y = round(random.randrange(0, window_height - snake_block) / 20.0) * 20.0
-    clock = pygame.time.Clock()
-    action = None
+        # 定义颜色
+        self.black = (0, 0, 0)
+        self.white = (255, 255, 255)
+        self.purple = (155, 89, 182)
+        self.green = (46, 204, 113)
+        self.blue = (52, 152, 219)
+
+        # 定义动作空间和状态空间
+        self.action_space = spaces.Discrete(4)  # 上、下、左、右
+        self.observation_space = spaces.Box(low=0, high=255, shape=(self.window_height, self.window_width, 3), dtype=np.uint8)
+
+        self.game_window = None
+        self.snake_list = []
+        self.snake_length = 1
+        self.snake_x = self.window_width / 2
+        self.snake_y = self.window_height / 2
+        self.snake_x_change = 0
+        self.snake_y_change = 0
+        self.food_x = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
+        self.food_y = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
+        self.clock = pygame.time.Clock()
 
     def _init_windows(self):
         # 创建游戏窗口
@@ -68,17 +73,17 @@ class snake():
         observation = self.get_observation()
         return observation
 
-    def step(self):
-        if self.action == 0:
+    def step(self, action):
+        if action == 0:
             self.snake_y_change = -self.snake_block
             self.snake_x_change = 0
-        elif self.action == 1:
+        elif action == 1:
             self.snake_y_change = self.snake_block
             self.snake_x_change = 0
-        elif self.action == 2:
+        elif action == 2:
             self.snake_x_change = -self.snake_block
             self.snake_y_change = 0
-        elif self.action == 3:
+        elif action == 3:
             self.snake_x_change = self.snake_block
             self.snake_y_change = 0
 
@@ -125,7 +130,7 @@ class snake():
         observation = np.transpose(observation, axes=(1, 0, 2))
         return observation
 
-    def render(self, mode=None):
+    def render(self, mode='human'):
         # 在屏幕上显示游戏状态
         self.game_window.fill(self.white)
         pygame.draw.rect(self.game_window, self.purple, [self.food_x, self.food_y, self.snake_block, self.snake_block])
@@ -133,39 +138,30 @@ class snake():
         self.display_score(self.snake_length - 1)
         pygame.display.update()
         self.clock.tick(self.snake_speed)
-        
-        if mode in ('human','h') :
-            # 等待玩家操作
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN :
-                    if event.key == pygame.K_UP:
-                        self.action = 0  # 上
-                        return 0 
-                    elif event.key == pygame.K_DOWN:
-                        self.action = 1  # 下
-                        return 1
-                    elif event.key == pygame.K_LEFT:
-                        self.action = 2  # 左
-                        return 2
-                    elif event.key == pygame.K_RIGHT:
-                        self.action = 3  # 右
-                        return 3
+
+        # 等待玩家操作
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN :
+                if event.key == pygame.K_UP:
+                    return 0  # 上
+                elif event.key == pygame.K_DOWN:
+                    return 1  # 下
+                elif event.key == pygame.K_LEFT:
+                    return 2  # 左
+                elif event.key == pygame.K_RIGHT:
+                    return 3  # 右
 
     def close(self):
         pygame.quit()
         quit()
-    
-    def run(self):
-        action = env.render(mode='h')  # 人类模式下，玩家通过键盘操作
-        if action != None :
-            print(action)
-        return self.step()
 
 if __name__ == "__main__":
-
-    env = snake()
+    env = SnakeEnv()
     observation = env.reset()
     done = False
 
     while not done:
-        observation, reward, done, _ = env.run()
+        action = env.render()  # 人类模式下，玩家通过键盘操作
+        if action != None :
+            print(action)
+        observation, reward, done, _ = env.step(action)
