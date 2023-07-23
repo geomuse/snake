@@ -2,6 +2,14 @@ import gym
 from gym import spaces
 from gym_snake import snake  
 import numpy as np
+import pickle
+
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+log = os.path.join(current_dir,'log/error.log')
+
+from loguru import logger
+logger.add(log,level='INFO', rotation='10 MB', format='{time:YYYY-MM-DD HH:mm:ss.SSS} | {message}')
 
 class SnakeEnv(gym.Env):
 
@@ -35,18 +43,41 @@ class SnakeEnv(gym.Env):
             print(action)
         return self.step(action)
     
-    def sample(self):
+    def random(self):
         action = self.action_space.sample()  # sample.
         if action != None :
             print(action)
         return self.step(action)
+    
+    def rl_run(self,observation):
+        with open(f'{current_dir}/data/q_table.pkl', 'rb') as f:
+            q_table = pickle.load(f)
+        
+        action = np.argmax(q_table[observation, :])
+        return env.step(action)
+
+    def framework(self,mode=None):
+        observation = self.reset()
+        done = False
+
+        if mode in ('sample','human' , 'h' ,'rl'):
+            match mode :
+                case 'sample':
+                    while not done:
+                        observation, reward, done, _ = self.random()
+                case 'human' | 'h': 
+                    while not done:
+                        observation, reward, done, _ = self.run()
+                case 'rl' :
+                    while not done:
+                        next_observation , _ , done , _ = self.rl_run(observation)
+                        self.render()
+                        observation = next_observation
 
 if __name__ == '__main__':
 
     env = SnakeEnv()
-    observation = env.reset()
-    done = False
+    env.framework(mode='rl')
+        
 
-    while not done:
-        observation, reward, done, _ = env.sample()
 
