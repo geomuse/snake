@@ -4,6 +4,20 @@ import random
 import numpy as np
 from dataclasses import dataclass
 
+import os , sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(current_dir, "..")
+sys.path.append(path)
+
+from notification_bot.loguru_notification import loguru_notf
+from game_bot.snake.pygame_math_snake import snake
+logger = loguru_notf(current_dir)
+logger.add('snake-math')
+
+'''
+可以建立自定义的字串蛇蛇.
+'''
+
 @dataclass
 class snake():
     pygame.font.init()
@@ -17,6 +31,7 @@ class snake():
     black = (0, 0, 0)
     white = (255, 255, 255)
     purple = (155, 89, 182)
+    carrot = (230, 126, 34)
     green = (46, 204, 113)
     blue = (52, 152, 219)
 
@@ -27,9 +42,13 @@ class snake():
     snake_y = window_height / 2
     snake_x_change = 0
     snake_y_change = 0
-    food_x = round(random.randrange(0, window_width - snake_block) / 20.0) * 20.0
-    food_y = round(random.randrange(0, window_height - snake_block) / 20.0) * 20.0
+    food_x1 = None
+    food_y1 = None
+    food_x2 = None
+    food_y2 = None
+    food_font = pygame.font.SysFont(None, 20)
     clock = pygame.time.Clock()
+    action = None
 
     def _init_windows(self):
         # 创建游戏窗口
@@ -40,11 +59,19 @@ class snake():
         for x in snake_list:
             pygame.draw.rect(self.game_window, self.green, [x[0], x[1], snake_block, snake_block])
 
+    def design_food1(self):
+        text = self.food_font.render("o", True, self.purple)
+        self.game_window.blit(text, (self.food_x1, self.food_y1))
+
+    def design_food2(self):
+        text = self.food_font.render("x", True, self.carrot)
+        self.game_window.blit(text, (self.food_x2, self.food_y2))
+
     def display_score(self, score):
         font = pygame.font.SysFont(None, 15)
         text = font.render(str(score), True, self.blue)
         self.game_window.blit(text, [10, 10])
-
+    
     def score_table_show(self):
         # 显示游戏结束信息
         font_style = pygame.font.SysFont(None, 15)
@@ -61,13 +88,15 @@ class snake():
         self.snake_y = self.window_height / 2
         self.snake_x_change = 0
         self.snake_y_change = 0
-        self.food_x = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
-        self.food_y = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
+        self.food_x1 = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
+        self.food_y1 = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
+        self.food_x2 = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
+        self.food_y2 = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
 
         observation = self.get_observation()
         return observation
 
-    def step(self, action):
+    def step(self,action):
         if action == 0:
             self.snake_y_change = -self.snake_block
             self.snake_x_change = 0
@@ -89,16 +118,17 @@ class snake():
 
         if self.snake_x >= self.window_width or self.snake_x < 0 or self.snake_y >= self.window_height or self.snake_y < 0:
             self.score_table_show()
-            done = True
             reward = -10
+            done = True
 
         if [self.snake_x, self.snake_y] in self.snake_list[:-1]:
             self.score_table_show()
-            done = True
             reward = -10
+            done = True
 
         self.game_window.fill(self.white)
-        pygame.draw.rect(self.game_window, self.purple, [self.food_x, self.food_y, self.snake_block, self.snake_block])
+        self.design_food1()
+        self.design_food2()
         snake_head = []
         snake_head.append(self.snake_x)
         snake_head.append(self.snake_y)
@@ -110,9 +140,15 @@ class snake():
         self.display_score(self.snake_length - 1)
         pygame.display.update()
 
-        if self.snake_x == self.food_x and self.snake_y == self.food_y:
-            self.food_x = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
-            self.food_y = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
+        if self.snake_x == self.food_x1 and self.snake_y == self.food_y1:
+            self.food_x1 = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
+            self.food_y1 = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
+            self.snake_length += 1
+            reward = 10
+
+        if self.snake_x == self.food_x2 and self.snake_y == self.food_y2:
+            self.food_x2 = round(random.randrange(0, self.window_width - self.snake_block) / 20.0) * 20.0
+            self.food_y2 = round(random.randrange(0, self.window_height - self.snake_block) / 20.0) * 20.0
             self.snake_length += 1
             reward = 10
 
@@ -124,31 +160,38 @@ class snake():
         observation = np.transpose(observation, axes=(1, 0, 2))
         return observation
 
-    def render(self, mode='human'):
+    def render(self, mode=None):
         # 在屏幕上显示游戏状态
         self.game_window.fill(self.white)
-        pygame.draw.rect(self.game_window, self.purple, [self.food_x, self.food_y, self.snake_block, self.snake_block])
+        self.design_food1()
+        self.design_food2()
         self.design_snake(self.snake_block, self.snake_list)
         self.display_score(self.snake_length - 1)
         pygame.display.update()
         self.clock.tick(self.snake_speed)
         
-        if mode == 'human' or 'h' :
+        if mode in ('human','h') :
             # 等待玩家操作
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN :
                     if event.key == pygame.K_UP:
-                        return 0  # 上
+                        return 0 
                     elif event.key == pygame.K_DOWN:
-                        return 1  # 下
+                        return 1
                     elif event.key == pygame.K_LEFT:
-                        return 2  # 左
+                        return 2
                     elif event.key == pygame.K_RIGHT:
-                        return 3  # 右
+                        return 3
 
     def close(self):
         pygame.quit()
         quit()
+    
+    def run(self):
+        action = env.render(mode='h')  #人类模式下，玩家通过键盘操作
+        if action != None :
+            print(action)
+        return self.step(action)
 
 if __name__ == "__main__":
 
@@ -157,7 +200,4 @@ if __name__ == "__main__":
     done = False
 
     while not done:
-        action = env.render(mode='h')  # 人类模式下，玩家通过键盘操作
-        if action != None :
-            print(action)
-        observation, reward, done, _ = env.step(action)
+        observation, reward, done, _ = env.run()

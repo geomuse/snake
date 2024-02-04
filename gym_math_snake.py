@@ -1,23 +1,19 @@
 import gym 
 from gym import spaces
-from gym_snake import snake  
 import numpy as np
 import pickle
 
-import os
+import os , sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
-log = os.path.join(current_dir,'log/error.log')
+path = '/home/geo/Downloads/geo'
+sys.path.append(path)
+from game_bot.snake.pygame_math_snake import snake
 
-from loguru import logger
-logger.add(log,level='INFO', rotation='10 MB', format='{time:YYYY-MM-DD HH:mm:ss.SSS} | {message}')
-
-class SnakeEnv(gym.Env):
+class math_snake(gym.Env):
 
     def __init__(self):
-        super(SnakeEnv, self).__init__()
-
-        self.snake_game = snake()  # 创建原始snake类的实例
-
+        super(math_snake, self).__init__()
+        self.snake_game = snake()
         # 定义动作空间和状态空间
         self.action_space = spaces.Discrete(4)  # 假设游戏有4个动作可选：上、下、左、右
         self.observation_space = spaces.Box(low=0, high=255,
@@ -44,7 +40,7 @@ class SnakeEnv(gym.Env):
         return self.step(action)
     
     def random(self):
-        action = self.action_space.sample()  # sample.
+        action = self.action_space.sample()
         if action != None :
             print(action)
         return self.step(action)
@@ -76,8 +72,5 @@ class SnakeEnv(gym.Env):
 
 if __name__ == '__main__':
 
-    env = SnakeEnv()
-    env.framework(mode='rl')
-        
-
-
+    env = math_snake()
+    env.framework(mode='h')
